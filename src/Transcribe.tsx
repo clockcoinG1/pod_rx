@@ -37,7 +37,7 @@ class Transcribe extends React.Component {
 
 		var request = new XMLHttpRequest();
 		request.open('POST', 'http://localhost:8833/t', true);
-		// request.setRequestHeader('Access-Control-Allow-Origin', '*');
+		request.setRequestHeader('Access-Control-Allow-Origin', '*');
 		request.responseType = 'json';
 		request.onload = () => {
 			if (request.status === 200) {
@@ -49,7 +49,7 @@ class Transcribe extends React.Component {
 
 				var requestStream = new XMLHttpRequest();
 				requestStream.open('GET', 'http://localhost:8833/transcribe?=' + fileName.file);
-				// requestStream.setRequestHeader('Access-Control-Allow-Origin', '*');
+				requestStream.setRequestHeader('Access-Control-Allow-Origin', '*');
 				requestStream.onprogress = (event) => {
 					this.setState({
 						response: <p>{event.target.response}</p>,
