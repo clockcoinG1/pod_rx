@@ -1,102 +1,93 @@
-// BEGINNING OF FILE: Transcribe.jsx
+import { useEffect, useRef, useState } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import styled from 'styled-components';
-/* TODO: create a styled transcript output box
-				- vertical scrolling with a responsive height and width
-				- autoscroll as transcript http stream comes in
-				- line numbers and clean interface
-*/
-
-const OutputBox = styled.div`
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	background-color: #f5f5f5;
-	border-radius: 5px;
-	border: 1px solid #e3e3e3;
-	padding: 10px;
-	margin: 10px;
-	overflow: auto;
-`;
-
-const Output = styled.div`
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	background-color: #f5f5f5;
-	border-radius: 5px;
-	border: 1px solid #e3e3e3;
-	padding: 10px;
-	margin: 10px;
-	overflow: auto;
-`;
 
 const OutputLine = styled.div`
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-start;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	background-color: #f5f5f5;
-	border-radius: 5px;
-	border: 1px solid #e3e3e3;
-	padding: 10px;
-	margin: 10px;
-	overflow: auto;
+  display: flex;
+  align-items: center;
+  margin: 5px;
+`;
+const LineNumber = styled.span`
+  font-weight: bold;
+  margin-right: 5px;
+`;
+const BubbleContainer = styled.div`
+  padding: 10px;
+  background-color: lightblue;
+  border-radius: 10px;
+`;
+const LineText = styled( BubbleContainer )`
+  display: inline-block;
 `;
 
-const LineNumber = styled.div`
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-start;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	background-color: #f5f5f5;
-	border-radius: 5px;
-	border: 1px solid #e3e3e3;
-	padding: 10px;
-	margin: 10px;
-	overflow: auto;
-`;
+export default function OutputBox( { transcript } ) {
+	const [atBottom, setAtBottom] = useState( false );
+	const virtuosoRef = useRef( null );
+	const [showButton, setShowButton] = useState( false );
+	const showButtonTimeout = 500; // in milliseconds
 
-const LineText = styled.div`
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-start;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	background-color: #f5f5f5;
-	border-radius: 5px;
-	border: 1px solid #e3e3e3;
-	padding: 10px;
-	margin: 10px;
-	overflow: auto;
-`;
+	useEffect( () => {
+		const scrollToBottom = () => {
+			virtuosoRef.current.scrollToIndex( { index: transcript.length - 1, behavior: 'smooth' } );
+			setAtBottom( true );
+		};
+		if ( virtuosoRef.current ) {
+			scrollToBottom();
+		}
+	}, [transcript] );
 
-const TranscriptOutput = (props) => {
-	const { transcript } = props;
-	const transcriptLines = transcript.split('\n');
-	const transcriptOutput = transcriptLines.map((line, index) => {
-		return (
-			<OutputLine key={index}>
-				<LineNumber>{index + 1}</LineNumber>
-				<LineText>{line}</LineText>
-			</OutputLine>
-		);
-	});
+	const toggleBg = ( index ) => {
+		return index % 2 === 0 ? 'lightgray' : 'white';
+	};
+
+	const handleScroll = ( event, scrollTop, _, scrollBottom ) => {
+		if ( scrollTop === 0 && !showButton ) {
+			setShowButton( true );
+			setAtBottom( false );
+		} else if ( scrollBottom === 0 ) {
+			setShowButton( false );
+			setAtBottom( true );
+		}
+	};
+
+	const scrollToBottom = () => {
+		virtuosoRef.current.scrollToIndex( { index: transcript.length - 1, behavior: 'smooth' } );
+	};
+
+	const handleShowButtonTimeout = () => {
+		setShowButton( !atBottom );
+	};
+
+	useEffect( () => {
+		const showButtonTimeoutId = setTimeout( handleShowButtonTimeout, showButtonTimeout );
+		return () => clearTimeout( showButtonTimeoutId );
+	}, [showButtonTimeout, atBottom] );
+
 	return (
-		<OutputBox>
-			<Output>{transcriptOutput}</Output>
-		</OutputBox>
+		<>
+			<Virtuoso
+				style={ { height: '400px', marginBottom: '10px' } }
+				ref={ virtuosoRef }
+				initialTopMostItemIndex={ 999 }
+				data={ transcript }
+				itemContent={ ( index, segment ) => {
+					return (
+						<OutputLine>
+							<LineNumber>{ index + 1 }</LineNumber>
+							<LineText>{ segment }</LineText>
+						</OutputLine>
+					);
+				} }
+				followOutput={ 'auto' }
+			// onScroll={ handleScroll }
+			/>
+			<div style={ { textAlign: 'right' } }>
+				{ showButton && (
+					<button onClick={ scrollToBottom } style={ { marginRight: '10px' } }>
+						Scroll to Bottom
+					</button>
+				) }
+			</div>
+		</>
 	);
-};
-
-export default TranscriptOutput;
+}

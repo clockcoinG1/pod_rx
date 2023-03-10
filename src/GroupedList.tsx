@@ -52,7 +52,7 @@ export default function OutputBox({ transcribe }) {
 				followOutput={'auto'}
 			/>
 			{showButton && (
-				<buttons
+				<button
 					onClick={() =>
 						virtuosoRef.current.scrollToIndex({ index: transcript.length - 1, behavior: 'smooth' })
 					}
